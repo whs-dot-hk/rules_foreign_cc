@@ -63,7 +63,7 @@ def create_configure_script(
             " ".join(autoreconf_options),
         ).lstrip())
 
-    script.append("{env_vars}\n{configure} --prefix=$$BUILD_TMPDIR$$/$$INSTALL_PREFIX$$ {user_options}".format(
+    script.append("{env_vars} {configure} --prefix=$$BUILD_TMPDIR$$/$$INSTALL_PREFIX$$ {user_options}".format(
         env_vars = env_vars_string,
         configure = configure_command or "\"{}\"".format(configure_path),
         user_options = " ".join(user_options),
@@ -109,7 +109,7 @@ def get_env_vars(
     # https://www.gnu.org/software/autoconf/manual/autoconf-2.63/html_node/Preset-Output-Variables.html
     vars["CPPFLAGS"] = deps_flags.flags
 
-    return "\n".join(["export {}=\"{}\""
+    return " ".join(["{}=\"{}\""
         .format(key, _join_flags_list(workspace_name, vars[key])) for key in vars])
 
 def _get_autogen_env_vars(autogen_env_vars):

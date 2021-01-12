@@ -18,7 +18,7 @@ load(":configure_script.bzl", "create_configure_script")
 load("//tools/build_defs/native_tools:tool_access.bzl", "get_make_data")
 load("@rules_foreign_cc//tools/build_defs:shell_script_helper.bzl", "os_name")
 
-def _create_configure_make(ctx, **kwargs):
+def _configure_make(ctx):
     make_data = get_make_data(ctx)
 
     tools_deps = ctx.attr.tools_deps + make_data.deps
@@ -32,22 +32,10 @@ def _create_configure_make(ctx, **kwargs):
         postfix_script = copy_results + "\n" + ctx.attr.postfix_script,
         tools_deps = tools_deps,
         make_path = make_data.path,
-        **kwargs
     )
     return cc_external_rule_impl(ctx, attrs)
 
-def _new_configure_make(ctx):
-    return _create_configure_make(ctx)
-
-def _configure_make(ctx):
-    return _create_configure_make(
-        ctx,
-        configure_command = "",
-        configure_script = ctx.attr.configure_command,
-    )
-
 def _create_configure_script(configureParameters):
-    attrs = configureParameters.attrs
     ctx = configureParameters.ctx
     inputs = configureParameters.inputs
 
@@ -59,9 +47,6 @@ def _create_configure_script(configureParameters):
 
     define_install_prefix = "export INSTALL_PREFIX=\"" + _get_install_prefix(ctx) + "\"\n"
 
-    configure_command = attrs.configure_command if hasattr(attrs, "configure_command") else ctx.attr.configure_command
-    configure_script = attrs.configure_script if hasattr(attrs, "configure_script") else ctx.attr.configure_script
-
     configure = create_configure_script(
         workspace_name = ctx.workspace_name,
         # as default, pass execution OS as target OS
@@ -72,8 +57,8 @@ def _create_configure_script(configureParameters):
         user_options = ctx.attr.configure_options,
         user_vars = dict(ctx.attr.configure_env_vars),
         is_debug = is_debug_mode(ctx),
-        configure_command = configure_command,
-        configure_script = configure_script,
+        configure_command = ctx.attr.configure_command,
+        configure_script = ctx.attr.configure_script,
         deps = ctx.attr.deps,
         inputs = inputs,
         configure_in_place = ctx.attr.configure_in_place,
@@ -94,7 +79,7 @@ def _get_install_prefix(ctx):
         return ctx.attr.lib_name
     return ctx.attr.name
 
-def _new_attrs():
+def _attrs():
     attrs = dict(CC_EXTERNAL_RULE_ATTRIBUTES)
     attrs.update({
         # The configure command, prioritise 'configure_script'
@@ -134,14 +119,6 @@ def _new_attrs():
     })
     return attrs
 
-def _attrs():
-    attrs = _new_attrs()
-    attrs.update({
-        "configure_command": attr.string(default = "configure"),
-    })
-    attrs.pop("configure_script")
-    return attrs
-
 """ Rule for building external libraries with configure-make pattern.
  Some 'configure' script is invoked with --prefix=install (by default),
  and other parameters for compilation and linking, taken from Bazel C/C++
@@ -157,18 +134,6 @@ configure_make = rule(
     fragments = ["cpp"],
     output_to_genfiles = True,
     implementation = _configure_make,
-    toolchains = [
-        "@rules_foreign_cc//tools/build_defs:make_toolchain",
-        "@rules_foreign_cc//tools/build_defs/shell_toolchain/toolchains:shell_commands",
-        "@bazel_tools//tools/cpp:toolchain_type",
-    ],
-)
-
-new_configure_make = rule(
-    attrs = _new_attrs(),
-    fragments = ["cpp"],
-    output_to_genfiles = True,
-    implementation = _new_configure_make,
     toolchains = [
         "@rules_foreign_cc//tools/build_defs:make_toolchain",
         "@rules_foreign_cc//tools/build_defs/shell_toolchain/toolchains:shell_commands",

@@ -1,10 +1,12 @@
 load(":cc_toolchain_util.bzl", "absolutize_path_in_str")
-load(":framework.bzl", "get_foreign_cc_dep")
+load(":framework.bzl", "get_foreign_cc_dep", "uniq_list_keep_order")
 
 def _pkgconfig_script(ext_build_dirs):
     script = []
-    for ext_dir in ext_build_dirs:
-        script.append("##increment_pkg_config_path## $$EXT_BUILD_DEPS$$/" + ext_dir.basename)
+
+    basenames = uniq_list_keep_order([ext_dir.basename for ext_dir in ext_build_dirs])
+    for basename in basenames:
+        script.append("##increment_pkg_config_path## $$EXT_BUILD_DEPS$$/" + basename)
 
     script.append("echo \"PKG_CONFIG_PATH=$$PKG_CONFIG_PATH$$\"")
 

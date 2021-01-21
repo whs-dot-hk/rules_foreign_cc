@@ -112,9 +112,9 @@ export SYSTEMDRIVE="C:"
 """
 
 def increment_pkg_config_path(source):
-    text = """local children=$($REAL_FIND $1 -mindepth 1 -name '*.pc')
+    text = """local children=$(find $1 -mindepth 1 -name '*.pc' -printf '%h\n' | uniq)
 for child in $children; do
-  export PKG_CONFIG_PATH="$$PKG_CONFIG_PATH$$:$(dirname $child)"
+  export PKG_CONFIG_PATH="$$PKG_CONFIG_PATH$$:$child"
 done
 """
     return FunctionAndCall(text = text)

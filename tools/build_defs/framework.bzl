@@ -30,7 +30,7 @@ load(
  Typically, the concrete external library rule will use this structure to create the attributes
  description dict. See cmake.bzl as an example.
 """
-CC_EXTERNAL_RULE_ATTRIBUTES = {
+NEW_CC_EXTERNAL_RULE_ATTRIBUTES = {
     # Library name. Defines the name of the install directory and the name of the static library,
     # if no output files parameters are defined (any of static_libraries, shared_libraries,
     # interface_libraries, binaries_names)
@@ -102,6 +102,13 @@ CC_EXTERNAL_RULE_ATTRIBUTES = {
     "_cc_toolchain": attr.label(default = Label("@bazel_tools//tools/cpp:current_cc_toolchain")),
 }
 
+def _cc_external_rule_attributes():
+    attrs = dict(NEW_CC_EXTERNAL_RULE_ATTRIBUTES)
+    attrs.pop("prefix_script")
+    return attrs
+
+CC_EXTERNAL_RULE_ATTRIBUTES = _cc_external_rule_attributes()
+
 def create_attrs(attr_struct, configure_name, create_configure_script, **kwargs):
     """ Function for adding/modifying context attributes struct (originally from ctx.attr),
      provided by user, to be passed to the cc_external_rule_impl function as a struct.
@@ -111,9 +118,12 @@ def create_attrs(attr_struct, configure_name, create_configure_script, **kwargs)
      'configure_script', and '**kwargs' parameters.
     """
     attrs = {}
-    for key in CC_EXTERNAL_RULE_ATTRIBUTES:
-        if not key.startswith("_") and hasattr(attr_struct, key):
-            attrs[key] = getattr(attr_struct, key)
+    for key in NEW_CC_EXTERNAL_RULE_ATTRIBUTES:
+        if not key.startswith("_"):
+            if hasattr(attr_struct, key):
+                attrs[key] = getattr(attr_struct, key)
+            else:
+                attrs[key] = None
 
     attrs["configure_name"] = configure_name
     attrs["create_configure_script"] = create_configure_script

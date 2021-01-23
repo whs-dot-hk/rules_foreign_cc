@@ -1,6 +1,7 @@
 load(
     "//tools/build_defs:framework.bzl",
     "CC_EXTERNAL_RULE_ATTRIBUTES",
+    "NEW_CC_EXTERNAL_RULE_ATTRIBUTES",
     "cc_external_rule_impl",
     "create_attrs",
 )
@@ -94,8 +95,8 @@ def _get_install_prefix(ctx):
         return ctx.attr.lib_name
     return ctx.attr.name
 
-def _new_attrs():
-    attrs = dict(CC_EXTERNAL_RULE_ATTRIBUTES)
+def _new_attrs(cc_external_rule_attributes = NEW_CC_EXTERNAL_RULE_ATTRIBUTES):
+    attrs = dict(cc_external_rule_attributes)
     attrs.update({
         # The configure command, prioritise 'configure_script'
         # Set either 'configure_command' or 'configure_script'
@@ -135,7 +136,7 @@ def _new_attrs():
     return attrs
 
 def _attrs():
-    attrs = _new_attrs()
+    attrs = _new_attrs(CC_EXTERNAL_RULE_ATTRIBUTES)
     attrs.update({
         "configure_command": attr.string(default = "configure"),
     })

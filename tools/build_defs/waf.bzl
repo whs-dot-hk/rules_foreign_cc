@@ -32,6 +32,7 @@ def _waf(ctx, **kwargs):
         postfix_script = copy_results + "\n" + ctx.attr.postfix_script,
         tools_deps = tools_deps,
         make_path = waf_data.path,
+        configure_in_place = True,
         **kwargs
     )
     return cc_external_rule_impl(ctx, attrs)

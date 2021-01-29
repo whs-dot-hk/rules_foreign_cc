@@ -33,6 +33,7 @@ def _create_configure_make(ctx, **kwargs):
         postfix_script = copy_results + "\n" + ctx.attr.postfix_script,
         tools_deps = tools_deps,
         make_path = make_data.path,
+        configure_in_place = ctx.attr.configure_in_place,
         **kwargs
     )
     return cc_external_rule_impl(ctx, attrs)

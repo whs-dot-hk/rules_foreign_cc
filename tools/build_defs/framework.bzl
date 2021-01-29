@@ -109,7 +109,7 @@ def _cc_external_rule_attributes():
 
 CC_EXTERNAL_RULE_ATTRIBUTES = _cc_external_rule_attributes()
 
-def create_attrs(attr_struct, configure_name, create_configure_script, **kwargs):
+def create_attrs(attr_struct, configure_name, create_configure_script, configure_in_place = False, **kwargs):
     """ Function for adding/modifying context attributes struct (originally from ctx.attr),
      provided by user, to be passed to the cc_external_rule_impl function as a struct.
 
@@ -125,6 +125,7 @@ def create_attrs(attr_struct, configure_name, create_configure_script, **kwargs)
             else:
                 attrs[key] = None
 
+    attrs["configure_in_place"] = configure_in_place
     attrs["configure_name"] = configure_name
     attrs["create_configure_script"] = create_configure_script
 
@@ -266,6 +267,7 @@ def cc_external_rule_impl(ctx, attrs):
         "##path## $$EXT_BUILD_ROOT$$",
         "##mkdirs## $$INSTALLDIR$$",
         _print_env(),
+        _copy_source(attrs),
         "\n".join(_copy_deps_and_tools(inputs)),
         "cd $$BUILD_TMPDIR$$",
         attrs.prefix_script or "",
@@ -463,10 +465,20 @@ def _copy_deps_and_tools(files):
     for ext_dir in files.ext_build_dirs:
         lines.append("##symlink_to_dir## $$EXT_BUILD_ROOT$$/{} $$EXT_BUILD_DEPS$$".format(_file_path(ext_dir)))
 
+    if files.ext_build_dirs:
+        lines.append("##define_absolute_paths## $$EXT_BUILD_DEPS$$ $$EXT_BUILD_DEPS$$")
+
     lines.append("##children_to_path## $$EXT_BUILD_DEPS$$/bin")
     lines.append("##path## $$EXT_BUILD_DEPS$$/bin")
 
     return lines
+
+def _copy_source(attrs):
+    if attrs.configure_in_place:
+        root = detect_root(attrs.lib_source)
+        return "# Copy source\n##symlink_contents_to_dir## $$EXT_BUILD_ROOT$$/{} $$BUILD_TMPDIR$$".format(root)
+    else:
+        return ""
 
 def _symlink_contents_to_dir(dir_name, files_list):
     # It is possible that some duplicate libraries will be passed as inputs
@@ -595,15 +607,21 @@ def _define_inputs(attrs):
 
     tools_roots = []
     tools_files = []
+    inputs_files = []
+
     for tool in attrs.tools_deps:
         tool_root = detect_root(tool)
         tools_roots.append(tool_root)
         for file_list in tool.files.to_list():
             tools_files += _list(file_list)
 
-    for tool in attrs.additional_tools:
-        for file_list in tool.files:
+    for additional_tool in attrs.additional_tools:
+        for file_list in additional_tool.files.to_list():
             tools_files += _list(file_list)
+
+    for additional_input in attrs.additional_inputs:
+        for file_list in additional_input.files.to_list():
+            inputs_files += _list(file_list)
 
     # These variables are needed for correct C/C++ providers constraction,
     # they should contain all libraries and include directories.
@@ -620,7 +638,7 @@ def _define_inputs(attrs):
         declared_inputs = filter_containing_dirs_from_inputs(attrs.lib_source.files.to_list()) +
                           bazel_libs +
                           tools_files +
-                          attrs.additional_inputs +
+                          inputs_files +
                           cc_info_merged.compilation_context.headers.to_list() +
                           ext_build_dirs,
     )

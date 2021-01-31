@@ -243,12 +243,15 @@ def cc_external_rule_impl(ctx, attrs):
     # we need this fictive file in the root to get the path of the root in the script
     empty = fictive_file_in_genroot(ctx.actions, ctx.label.name)
 
+    install_root = "$$EXT_BUILD_ROOT$$/" + empty.file.dirname
+    install_dir = install_root + "/" + lib_name
+
     define_variables = [
         set_cc_envs,
         "export EXT_BUILD_ROOT=##pwd##",
         "export BUILD_TMPDIR=##tmpdir##",
         "export EXT_BUILD_DEPS=##tmpdir##",
-        "export INSTALLDIR=$$EXT_BUILD_ROOT$$/" + empty.file.dirname + "/" + lib_name,
+        "export INSTALLDIR={}".format(install_dir),
     ]
 
     make_commands = []
@@ -279,6 +282,7 @@ def cc_external_rule_impl(ctx, attrs):
         # for the results which are in $INSTALLDIR (with placeholder)
         "##replace_absolute_paths## $$INSTALLDIR$$ $$BUILD_TMPDIR$$",
         "##replace_absolute_paths## $$INSTALLDIR$$ $$EXT_BUILD_DEPS$$",
+        "##replace_absolute_paths## $$INSTALLDIR$$ {}".format(install_root),
         installdir_copy.script,
         empty.script,
         "cd $$EXT_BUILD_ROOT$$",

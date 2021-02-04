@@ -42,14 +42,17 @@ def _create_make_script(configureParameters):
     flags = get_flags_info(ctx)
 
     make_commands = ctx.attr.make_commands or [
-        "{make} -j`nproc` {keep_going} -C $$EXT_BUILD_ROOT$$/{root}".format(
-            make=configureParameters.attrs.make_path,
-            keep_going="-k" if ctx.attr.keep_going else "",
-            root=root),
+        "{make} -j`nproc` {keep_going} -C $$EXT_BUILD_ROOT$$/{root} PREFIX={prefix}".format(
+            make = configureParameters.attrs.make_path,
+            keep_going = "-k" if ctx.attr.keep_going else "",
+            root = root,
+            prefix = install_prefix,
+        ),
         "{make} -C $$EXT_BUILD_ROOT$$/{root} install PREFIX={prefix}".format(
-            make=configureParameters.attrs.make_path,
-            root=root,
-            prefix=install_prefix),
+            make = configureParameters.attrs.make_path,
+            root = root,
+            prefix = install_prefix,
+        ),
     ]
 
     return create_make_script(

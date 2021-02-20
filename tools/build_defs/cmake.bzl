@@ -89,6 +89,7 @@ def _create_configure_script(configureParameters):
         user_env = dict(ctx.attr.env_vars),
         options = ctx.attr.cmake_options,
         include_dirs = inputs.include_dirs,
+        ext_build_dirs = inputs.ext_build_dirs,
         is_debug_mode = is_debug_mode(ctx),
     )
     return define_install_prefix + configure_script
